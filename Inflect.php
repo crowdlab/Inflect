@@ -1,13 +1,13 @@
 <?php
 /**
- * Russian names inflection library 
- * 
+ * Russian names inflection library
+ *
  * @author Igor Gavrilov <igor.gavrilov@softline.ru>
  * @link git://github.com/mytholog/Inflect.git
  * @version 0.0.1
  */
 class Inflect {
-	
+
 	const MALE	= 'male';
 	const FEMALE	= 'female';
 
@@ -68,29 +68,52 @@ class Inflect {
 	}
 
 	/**
+	 * @param $name
+	 * @return string ru|en
+	 */
+	public function getNameLang($name) {
+		return preg_match('/[a-zA-Z]/', $name) ? 'en' : 'ru';
+	}
+
+	/**
 	 * Возвращает просклоненное имя в выбранном падеже
-	 * 
+	 *
 	 * @param string $fullName Фамилия Имя Отчество
-	 * @param int $case Падеж (0 - genitive, 1 - dative, 2 - accusative, 3 - instrumentative, 4 - prepositional)
+	 * @param int $case Падеж (
+	 *   0 - genitive,
+	 *   1 - dative,
+	 *   2 - accusative,
+	 *   3 - instrumentative,
+	 *   4 - prepositional)
+	 * @param $name_order string [fn | nf] Фамилия-Имя или Имя-Фамилия
 	 * @return string
 	 */
-	public function getInflectName($fullName, $case) {
+	public function getInflectName($fullName, $case, $name_order = 'fn') {
 		if (empty($fullName)) {
 			return;
 		}
+		if ($this->getNameLang($fullName) != 'ru')
+			return $fullName;
 
-		$this->explodeName($fullName);
+		$this->explodeName($fullName, $name_order);
 		$this->gender = $this->getGender();
 		$this->case = $case;
-		
+
 		$this->processingMiddleName();
 		$this->processingFirstName();
 		$this->processingLastName();
 
-		 return sprintf(
+		 return $name_order == 'fn'
+			? sprintf(
 				'%s%s%s',
 				$this->lastName,
-				empty($this->firstName) ? '' : ' ' .$this->firstName,
+				empty($this->firstName)  ? '' : ' ' .$this->firstName,
+				empty($this->middleName) ? '' : ' ' .$this->middleName
+			)
+			: sprintf(
+				'%s%s%s',
+				$this->firstName,
+				empty($this->lastName)   ? '' : ' ' .$this->lastName,
 				empty($this->middleName) ? '' : ' ' .$this->middleName
 			);
 	}
@@ -99,7 +122,7 @@ class Inflect {
 	 * Определение пола
 	 *
 	 * @param string $fullName OPTIONAL Фамилия Имя Отчество
-	 * @return string|null 
+	 * @return string|null
 	 */
 	public function getGender($fullName = null) {
 		if (!is_null($fullName)) {
@@ -207,7 +230,7 @@ class Inflect {
 	/**
 	 * @param string $ruleGroup
 	 * @param string $field
-	 * @return boolean 
+	 * @return boolean
 	 */
 	protected function replaceProcessing($ruleGroup, $field) {
 		foreach ($this->map[$ruleGroup] as $pattern => $value) {
@@ -220,8 +243,12 @@ class Inflect {
 		return false;
 	}
 
-	private function explodeName($fullName) {
-		list($this->lastName, $this->firstName, $this->middleName) = explode(' ', ucwords(trim($fullName)));
+	private function explodeName($fullName, $name_order = 'fn') {
+		$expl = explode(' ', ucwords(trim($fullName)));
+		if ($name_order == 'fn')
+			list($this->lastName, $this->firstName, $this->middleName) = $expl;
+		else
+			list($this->firstName, $this->lastName, $this->middleName) = $expl;
 	}
 
 }
